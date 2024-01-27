@@ -1,0 +1,33 @@
+name: Deploy to Minikube
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Set Up SSH Key for Remote Machine
+        uses: webfactory/ssh-agent@v0.5.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          known-hosts: ${{ secrets.KNOWN_HOSTS }}
+
+      - name: Build Docker Image
+        run: docker build -t docker-images:latest .
+
+      - name: Push Docker Image
+        run: |
+          docker login -u nishantlakhera -p ${{ secrets.DOCKER_PASSWORD }} nishantlakhera/docker-images
+          docker push nishantlakhera/docker-images:latest
+
+      - name: Deploy to Minikube
+        run: |
+          kubectl config use-context minikube
+          kubectl apply -f your-deployment-file.yaml
